@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캠페인 게재보고</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --bg:      #F7F6F2;
+  --surf:    #FFFFFF;
+  --surf2:   #F0EFE9;
+  --border:  #E2E0D8;
+  --border2: #CCCAC0;
+  --text:    #1A1916;
+  --sub:     #6B6860;
+  --hint:    #AEAC A4;
+  --accent:  #1A1916;
+  --tag-meta:   #E85820;
+  --tag-tiktok: #111111;
+  --f: 'Pretendard', -apple-system, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--f); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; -webkit-font-smoothing: antialiased; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--surf);
+  border-bottom: 1px solid var(--border);
+  height: 52px;
+  padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.tb-brand { font-size: 13px; font-weight: 600; letter-spacing: .01em; color: var(--text); }
+.tb-brand span { color: var(--sub); font-weight: 400; }
+.tb-right { display: flex; align-items: center; gap: 10px; }
+.btn-pdf {
+  background: var(--text); color: #fff; border: none;
+  height: 34px; padding: 0 18px;
+  font-family: var(--f); font-size: 12px; font-weight: 600;
+  letter-spacing: .02em; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: opacity .15s;
+}
+.btn-pdf:hover { opacity: .78; }
+.btn-pdf svg { width: 13px; height: 13px; }
+
+/* ── WRAP ── */
+.wrap { max-width: 880px; margin: 0 auto; padding: 40px 28px 120px; }
+
+/* ── COVER ── */
+.cover {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  padding: 40px 44px 36px;
+  margin-bottom: 32px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 48px;
+  align-items: end;
+}
+.cover-left {}
+.cover-eyebrow {
+  font-size: 10px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--sub); margin-bottom: 20px;
+}
+.month-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 6px; }
+.ci-month {
+  font-size: 56px; font-weight: 700; letter-spacing: -.02em;
+  background: transparent; border: none; outline: none;
+  font-family: var(--f); color: var(--text); width: 90px; padding: 0;
+}
+.ci-month::placeholder { color: var(--border2); }
+.month-suffix { font-size: 56px; font-weight: 300; color: var(--border2); letter-spacing: -.02em; }
+.cover-right { padding-bottom: 6px; }
+.field-group { margin-bottom: 20px; }
+.field-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--sub); margin-bottom: 7px; }
+.ci {
+  background: transparent; border: none;
+  border-bottom: 1px solid var(--border2);
+  font-family: var(--f); outline: none; color: var(--text);
+  width: 100%; padding: 4px 0 6px;
+  transition: border-color .15s;
+}
+.ci:focus { border-bottom-color: var(--text); }
+.ci::placeholder { color: var(--border2); }
+.ci-title { font-size: 18px; font-weight: 600; }
+.ci-brand { font-size: 14px; font-weight: 500; }
+.preview-label {
+  font-size: 13px; font-weight: 400; color: var(--sub);
+  padding: 4px 0 6px; border-bottom: 1px solid var(--border);
+}
+
+/* ── SECTION HEADER ── */
+.sec-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; margin-top: 36px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.sec-label { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--sub); }
+.btn-add {
+  background: transparent; border: 1px solid var(--border2);
+  font-family: var(--f); font-size: 12px; font-weight: 600;
+  color: var(--text); cursor: pointer; height: 30px; padding: 0 14px;
+  display: flex; align-items: center; gap: 5px;
+  transition: background .12s, border-color .12s;
+}
+.btn-add:hover { background: var(--surf2); border-color: var(--text); }
+
+/* ── PRODUCT BLOCK ── */
+.prod {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.prod-hd {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surf);
+}
+.prod-idx { font-size: 11px; font-weight: 700; color: var(--sub); letter-spacing: .04em; flex-shrink: 0; }
+.prod-name {
+  flex: 1; border: none; outline: none; font-family: var(--f);
+  font-size: 14px; font-weight: 600; color: var(--text); background: transparent;
+}
+.prod-name::placeholder { color: var(--border2); font-weight: 400; }
+.btn-del {
+  background: none; border: none; cursor: pointer; color: var(--sub);
+  font-family: var(--f); font-size: 11px; font-weight: 500;
+  padding: 4px 8px; transition: color .1s;
+}
+.btn-del:hover { color: #c0392b; }
+
+/* ── TABS ── */
+.tabs { display: flex; border-bottom: 1px solid var(--border); }
+.tab {
+  padding: 10px 20px; font-size: 12px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  color: var(--sub); border-bottom: 2px solid transparent;
+  transition: all .12s; user-select: none; letter-spacing: .02em;
+}
+.tab:hover { color: var(--text); background: var(--surf2); }
+.tab.active.meta { color: var(--tag-meta); border-bottom-color: var(--tag-meta); }
+.tab.active.tiktok { color: var(--tag-tiktok); border-bottom-color: var(--tag-tiktok); }
+.ch-pill {
+  font-size: 9px; font-weight: 700; padding: 2px 6px;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.meta .ch-pill { background: #FEF0EA; color: var(--tag-meta); }
+.tiktok .ch-pill { background: #F0F0F0; color: #333; }
+
+/* ── PANEL ── */
+.panel { padding: 18px 20px; display: none; }
+.panel.active { display: block; }
+.panel-sub {
+  font-size: 11px; color: var(--sub); margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-sub-l { display: flex; align-items: center; gap: 6px; }
+.slot-count { font-size: 11px; font-weight: 600; color: var(--sub); }
+
+/* ── IMAGE GRID ── */
+.img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.slot-wrap { display: flex; flex-direction: column; gap: 6px; }
+
+.slot {
+  border: 1px solid var(--border);
+  background: var(--surf2);
+  min-height: 170px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: border-color .12s, background .12s;
+}
+.slot:hover { border-color: var(--border2); background: #E8E6DF; }
+.slot.filled { background: #fff; cursor: default; }
+.slot.filled:hover { border-color: var(--text); }
+.slot img { width: 100%; height: auto; display: block; }
+.slot-ov {
+  position: absolute; inset: 0;
+  background: rgba(26,25,22,.5);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  opacity: 0; transition: opacity .15s;
+}
+.slot.filled:hover .slot-ov { opacity: 1; }
+.ov-btn {
+  background: #fff; border: none;
+  font-family: var(--f); font-size: 11px; font-weight: 600;
+  padding: 5px 12px; cursor: pointer; color: var(--text);
+  transition: background .1s;
+}
+.ov-btn:hover { background: var(--surf2); }
+.ov-btn.red { background: #ff3b30; color: #fff; }
+.ov-btn.red:hover { background: #d92e24; }
+.slot-ph { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 12px; }
+.slot-ph svg { color: var(--border2); }
+.slot-ph-t { font-size: 10px; font-weight: 600; color: var(--border2); text-align: center; letter-spacing: .06em; text-transform: uppercase; line-height: 1.6; }
+.slot input[type=file] { display: none; }
+
+/* caption */
+.cap {
+  width: 100%; background: transparent;
+  border: none; border-bottom: 1px solid var(--border);
+  font-family: var(--f); font-size: 11px; font-weight: 500;
+  color: var(--text); padding: 5px 2px; outline: none;
+  transition: border-color .12s;
+}
+.cap:focus { border-bottom-color: var(--text); }
+.cap::placeholder { color: var(--border2); font-weight: 400; }
+
+/* add slot btn */
+.btn-slot {
+  width: 100%; border: 1px dashed var(--border2); background: none;
+  padding: 10px; font-family: var(--f); font-size: 11px; font-weight: 600;
+  color: var(--sub); cursor: pointer; transition: all .12s;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  letter-spacing: .04em;
+}
+.btn-slot:hover { border-color: var(--text); color: var(--text); background: var(--surf2); }
+
+/* ── OVERLAY ── */
+.overlay { position: fixed; inset: 0; background: rgba(26,25,22,.55); display: flex; align-items: center; justify-content: center; z-index: 300; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.overlay.on { opacity: 1; pointer-events: all; }
+.prog-box { background: var(--surf); border: 1px solid var(--border); padding: 32px 44px; text-align: center; min-width: 240px; }
+.prog-label { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sub); margin-bottom: 10px; }
+.prog-msg { font-size: 15px; font-weight: 600; color: var(--text); }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--text); color: #fff; padding: 9px 20px; font-size: 12px; font-weight: 600; font-family: var(--f); opacity: 0; pointer-events: none; transition: all .25s; z-index: 400; white-space: nowrap; }
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.footer-note { font-size: 11px; color: var(--sub); text-align: center; margin-top: 44px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-brand">캠페인 게재보고 <span>/ 빌더</span></div>
+  <div class="tb-right">
+    <button class="btn-pdf" onclick="exportPDF()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      PDF 내보내기
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- COVER -->
+  <div class="cover">
+    <div class="cover-left">
+      <div class="cover-eyebrow">대분류 — 보고서 기본 정보</div>
+      <div class="month-row">
+        <input class="ci-month" id="coverMonth" placeholder="5" maxlength="3" oninput="syncUI()">
+        <span class="month-suffix">월</span>
+      </div>
+      <div class="preview-label" id="titlePreview">5월 캠페인 게재보고</div>
+    </div>
+    <div class="cover-right">
+      <div class="field-group">
+        <div class="field-label">브랜드명</div>
+        <input class="ci ci-brand" id="coverBrand" placeholder="구달">
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="sec-row" style="margin-top:0">
+    <span class="sec-label">중분류 — 상품</span>
+    <button class="btn-add" onclick="addProduct()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+      상품 추가
+    </button>
+  </div>
+  <div id="prodList"></div>
+  <p class="footer-note">상품 추가 후 Meta / TikTok 탭에서 이미지 업로드 — 채널당 최대 6개</p>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="prog-box">
+    <div class="prog-label">PDF 생성 중</div>
+    <div class="prog-msg" id="progMsg">준비 중...</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let products = [], PC = 0, SC = 0;
+
+function syncUI() {
+  const v = document.getElementById('coverMonth').value || '?';
+  document.getElementById('titlePreview').textContent = `${v}월 캠페인 게재보고`;
+  document.querySelectorAll('.msync').forEach(e => e.textContent = v);
+}
+
+/* ── ADD PRODUCT ── */
+function addProduct() {
+  const id = ++PC;
+  products.push({ id, name: '' });
+  const month = document.getElementById('coverMonth').value || '?';
+  const div = document.createElement('div');
+  div.className = 'prod'; div.id = `P${id}`;
+  div.innerHTML = `
+    <div class="prod-hd">
+      <span class="prod-idx" id="PN${id}">${String(products.length).padStart(2,'0')}</span>
+      <input class="prod-name" placeholder="${month}월 상품명 입력..." oninput="products.find(p=>p.id===${id}).name=this.value">
+      <button class="btn-del" onclick="delProduct(${id})">삭제</button>
+    </div>
+    <div class="tabs">
+      <div class="tab meta active" id="TM${id}" onclick="switchTab(${id},'meta')">
+        Meta <span class="ch-pill">메타</span>
+      </div>
+      <div class="tab tiktok" id="TT${id}" onclick="switchTab(${id},'tiktok')">
+        TikTok <span class="ch-pill">틱톡</span>
+      </div>
+    </div>
+    <div class="panel active" id="PM${id}">
+      <div class="panel-sub">
+        <span class="panel-sub-l">소분류 · <span class="msync">${month}</span>월 · Meta</span>
+        <span class="slot-count" id="SC_M${id}">0 / 6</span>
+      </div>
+      <div class="img-grid" id="GM${id}"></div>
+      <button class="btn-slot" id="ABM${id}" onclick="addSlot(${id},'M')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        이미지 추가
+      </button>
+    </div>
+    <div class="panel" id="PT${id}">
+      <div class="panel-sub">
+        <span class="panel-sub-l">소분류 · <span class="msync">${month}</span>월 · TikTok</span>
+        <span class="slot-count" id="SC_T${id}">0 / 6</span>
+      </div>
+      <div class="img-grid" id="GT${id}"></div>
+      <button class="btn-slot" id="ABT${id}" onclick="addSlot(${id},'T')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        이미지 추가
+      </button>
+    </div>
+  `;
+  document.getElementById('prodList').appendChild(div);
+  addSlot(id, 'M'); addSlot(id, 'T');
+}
+
+function delProduct(id) {
+  products = products.filter(p => p.id !== id);
+  document.getElementById(`P${id}`)?.remove();
+  products.forEach((p, i) => {
+    const e = document.getElementById(`PN${p.id}`);
+    if (e) e.textContent = String(i + 1).padStart(2, '0');
+  });
+}
+
+function switchTab(pid, ch) {
+  const isMeta = ch === 'meta';
+  document.getElementById(`TM${pid}`).classList.toggle('active', isMeta);
+  document.getElementById(`TT${pid}`).classList.toggle('active', !isMeta);
+  document.getElementById(`PM${pid}`).classList.toggle('active', isMeta);
+  document.getElementById(`PT${pid}`).classList.toggle('active', !isMeta);
+}
+
+/* ── SLOT ── */
+function addSlot(pid, ch) {
+  const grid = document.getElementById(`G${ch}${pid}`);
+  if (!grid) return;
+  const cnt = grid.querySelectorAll('.slot-wrap').length;
+  if (cnt >= 6) { showToast('채널당 최대 6개'); return; }
+  const sid = `S${++SC}`;
+  const wrap = document.createElement('div'); wrap.className = 'slot-wrap'; wrap.id = `W${sid}`;
+  const slot = document.createElement('div'); slot.className = 'slot'; slot.id = sid;
+  slot.innerHTML = `
+    <div class="slot-ph">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <div class="slot-ph-t">클릭하여<br>업로드</div>
+    </div>
+    <input type="file" accept="image/*" onchange="loadImg(this,'${sid}','${pid}','${ch}')">
+    <div class="slot-ov">
+      <button class="ov-btn" onclick="event.stopPropagation();document.getElementById('${sid}').querySelector('input').click()">변경</button>
+      <button class="ov-btn red" onclick="event.stopPropagation();delSlot('${sid}','${pid}','${ch}')">삭제</button>
+    </div>
+  `;
+  slot.addEventListener('click', function () { if (!this.classList.contains('filled')) this.querySelector('input').click(); });
+  const cap = document.createElement('input');
+  cap.className = 'cap'; cap.id = `C${sid}`;
+  cap.placeholder = '이미지 이름 / @계정명';
+  wrap.appendChild(slot); wrap.appendChild(cap);
+  grid.appendChild(wrap);
+  refreshCount(pid, ch);
+}
+
+function delSlot(sid, pid, ch) {
+  document.getElementById(`W${sid}`)?.remove();
+  refreshCount(pid, ch);
+}
+
+function refreshCount(pid, ch) {
+  const grid = document.getElementById(`G${ch}${pid}`);
+  const btn = document.getElementById(`AB${ch}${pid}`);
+  const cntEl = document.getElementById(`SC_${ch}${pid}`);
+  if (!grid) return;
+  const n = grid.querySelectorAll('.slot-wrap').length;
+  if (cntEl) cntEl.textContent = `${n} / 6`;
+  if (btn) btn.style.display = n >= 6 ? 'none' : 'flex';
+}
+
+function loadImg(input, sid, pid, ch) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const slot = document.getElementById(sid);
+    slot.classList.add('filled');
+    slot.querySelector('.slot-ph').remove();
+    let img = slot.querySelector('img');
+    if (!img) { img = document.createElement('img'); slot.insertBefore(img, slot.querySelector('.slot-ov')); }
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ══════════════════════════════════════════
+   PDF — Canvas rendering
+   A4 Portrait, 1240×1754px
+   Pretendard + Noto Sans KR fallback
+   이미지: object-fit contain, 배경 #1A1916 (이미지 배경색과 자연스럽게 융합)
+   레이아웃: 2열 × 3행
+══════════════════════════════════════════ */
+async function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const month = document.getElementById('coverMonth').value || '?';
+  const brand = document.getElementById('coverBrand').value || '브랜드';
+
+  showOverlay('폰트 로딩 중...');
+  await Promise.all([
+    document.fonts.load('300 20px "Pretendard"'),
+    document.fonts.load('400 20px "Pretendard"'),
+    document.fonts.load('500 20px "Pretendard"'),
+    document.fonts.load('600 20px "Pretendard"'),
+    document.fonts.load('700 20px "Pretendard"'),
+  ]).catch(() => {});
+
+  const CW = 1240, CH = 1754, MW = 210, MH = 297;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  let first = true;
+
+  const addPage = cvs => {
+    const d = cvs.toDataURL('image/jpeg', .94);
+    if (!first) doc.addPage(); first = false;
+    doc.addImage(d, 'JPEG', 0, 0, MW, MH);
+  };
+  const mk = () => { const c = document.createElement('canvas'); c.width = CW; c.height = CH; return c; };
+  const M = 72;
+
+  /* font helpers */
+  const f  = (ctx, sz) => { ctx.font = `400 ${sz}px "Pretendard",-apple-system,sans-serif`; };
+  const fm = (ctx, sz) => { ctx.font = `500 ${sz}px "Pretendard",-apple-system,sans-serif`; };
+  const fb = (ctx, sz) => { ctx.font = `700 ${sz}px "Pretendard",-apple-system,sans-serif`; };
+  const fl = (ctx, sz) => { ctx.font = `300 ${sz}px "Pretendard",-apple-system,sans-serif`; };
+
+  /* ── COVER ── */
+  showOverlay('커버 생성 중...');
+  {
+    const cvs = mk(); const ctx = cvs.getContext('2d');
+
+    // bg: clean off-white
+    ctx.fillStyle = '#F7F6F2'; ctx.fillRect(0, 0, CW, CH);
+
+    // top rule — full width, thin
+    ctx.fillStyle = '#1A1916'; ctx.fillRect(0, 0, CW, 6);
+
+    // left large month
+    fb(ctx, 200); ctx.fillStyle = '#1A1916';
+    ctx.fillText(month, M, CH * .38);
+    fl(ctx, 72); ctx.fillStyle = '#CCCAC0';
+    ctx.fillText('월 캠페인 게재보고', M, CH * .38 + 86);
+
+    // divider
+    ctx.fillStyle = '#E2E0D8'; ctx.fillRect(M, CH * .38 + 120, CW - M * 2, 1);
+
+    // brand
+    fm(ctx, 36); ctx.fillStyle = '#1A1916';
+    ctx.fillText(brand, M, CH * .38 + 170);
+
+    // bottom
+    ctx.fillStyle = '#E2E0D8'; ctx.fillRect(M, CH - 100, CW - M * 2, 1);
+    f(ctx, 22); ctx.fillStyle = '#AEACA4';
+    ctx.fillText(`${month}월 캠페인 게재보고  ·  ${brand}`, M, CH - 60);
+
+    addPage(cvs);
+  }
+
+  /* ── PRODUCTS ── */
+  for (let pi = 0; pi < products.length; pi++) {
+    const prod = products[pi];
+    const pName = prod.name || '상품명';
+    showOverlay(`${pName} 렌더링 중...`);
+
+    /* DIVIDER PAGE */
+    {
+      const cvs = mk(); const ctx = cvs.getContext('2d');
+      ctx.fillStyle = '#F7F6F2'; ctx.fillRect(0, 0, CW, CH);
+      ctx.fillStyle = '#1A1916'; ctx.fillRect(0, 0, CW, 6);
+
+      // large product number (watermark)
+      fb(ctx, 320); ctx.fillStyle = 'rgba(26,25,22,.04)';
+      ctx.fillText(String(pi + 1).padStart(2, '0'), CW - 400, CH * .62);
+
+      // content
+      f(ctx, 22); ctx.fillStyle = '#AEACA4';
+      ctx.fillText('PRODUCT', M, CH * .34);
+
+      ctx.fillStyle = '#E2E0D8'; ctx.fillRect(M, CH * .34 + 16, 60, 2);
+
+      fb(ctx, 80); ctx.fillStyle = '#1A1916';
+      ctx.fillText(pName, M, CH * .34 + 110);
+
+      fm(ctx, 30); ctx.fillStyle = '#AEACA4';
+      ctx.fillText(`${month}월`, M, CH * .34 + 162);
+
+      // channel tags
+      const ty = CH * .34 + 222;
+      // meta tag
+      ctx.fillStyle = '#FEF0EA';
+      ctx.fillRect(M, ty, 130, 42);
+      fm(ctx, 20); ctx.fillStyle = '#E85820';
+      ctx.fillText('Meta', M + 14, ty + 27);
+      // tiktok tag
+      ctx.fillStyle = '#F0F0F0';
+      ctx.fillRect(M + 146, ty, 150, 42);
+      fm(ctx, 20); ctx.fillStyle = '#333';
+      ctx.fillText('TikTok', M + 160, ty + 27);
+
+      addPage(cvs);
+    }
+
+    /* CHANNEL PAGES */
+    for (const { chId, label, accentColor, tagBg } of [
+      { chId: 'M', label: 'Meta', accentColor: '#E85820', tagBg: '#FEF0EA' },
+      { chId: 'T', label: 'TikTok', accentColor: '#111111', tagBg: '#F0F0F0' }
+    ]) {
+      const grid = document.getElementById(`G${chId}${prod.id}`);
+      if (!grid) continue;
+      const wraps = Array.from(grid.querySelectorAll('.slot-wrap')).filter(w => w.querySelector('.slot.filled'));
+      if (!wraps.length) continue;
+
+      const COLS = 2, PER = 6;
+      for (let ps = 0; ps < wraps.length; ps += PER) {
+        const group = wraps.slice(ps, ps + PER);
+        const cvs = mk(); const ctx = cvs.getContext('2d');
+
+        ctx.fillStyle = '#F7F6F2'; ctx.fillRect(0, 0, CW, CH);
+        ctx.fillStyle = '#1A1916'; ctx.fillRect(0, 0, CW, 6);
+
+        /* header */
+        const HH = 110;
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 6, CW, HH);
+        ctx.fillStyle = '#E2E0D8'; ctx.fillRect(0, 6 + HH, CW, 1);
+
+        // channel tag
+        ctx.fillStyle = tagBg;
+        ctx.fillRect(M, 28, label.length * 14 + 28, 38);
+        fm(ctx, 20); ctx.fillStyle = accentColor;
+        ctx.fillText(label, M + 14, 53);
+
+        // product name
+        fb(ctx, 36); ctx.fillStyle = '#1A1916';
+        ctx.fillText(pName, M + label.length * 14 + 44, 53);
+
+        // right: month
+        f(ctx, 22); ctx.fillStyle = '#AEACA4';
+        const rLabel = `${month}월`;
+        const rw = ctx.measureText(rLabel).width;
+        ctx.fillText(rLabel, CW - M - rw, 53);
+
+        // ── IMAGES 2col × rows ──
+        const GAP = 16;
+        const CAP_H = 52;
+        const PAD_T = 6 + HH + 28;
+        const PAD_B = 36;
+        const avW = CW - M * 2;
+        const avH = CH - PAD_T - PAD_B;
+        const ROWS = Math.ceil(group.length / COLS);
+        const cellW = (avW - GAP * (COLS - 1)) / COLS;
+        const cellH = (avH - GAP * (ROWS - 1)) / ROWS;
+        const imgH = cellH - CAP_H;
+
+        for (let i = 0; i < group.length; i++) {
+          const wrap = group[i];
+          const imgEl = wrap.querySelector('img');
+          const capEl = wrap.querySelector('.cap');
+          const caption = capEl ? capEl.value : '';
+          const col = i % COLS, row = Math.floor(i / COLS);
+          const cx = M + col * (cellW + GAP);
+          const cy = PAD_T + row * (cellH + GAP);
+
+          // image bg — dark so letterbox is invisible
+          ctx.fillStyle = '#1A1916';
+          ctx.fillRect(cx, cy, cellW, imgH);
+
+          if (imgEl && imgEl.src && imgEl.src.startsWith('data:')) {
+            await drawContain(ctx, imgEl.src, cx, cy, cellW, imgH);
+          }
+
+          // caption area
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(cx, cy + imgH, cellW, CAP_H);
+          ctx.fillStyle = '#E2E0D8';
+          ctx.fillRect(cx, cy + imgH, cellW, 1);
+
+          if (caption) {
+            fm(ctx, 22); ctx.fillStyle = '#1A1916';
+            ctx.fillText(caption, cx + 12, cy + imgH + 34, cellW - 20);
+          } else {
+            f(ctx, 20); ctx.fillStyle = '#CCCAC0';
+            ctx.fillText('—', cx + 12, cy + imgH + 34);
+          }
+        }
+
+        addPage(cvs);
+      }
+    }
+  }
+
+  const fname = `${month}월_캠페인_게재보고_${brand}.pdf`;
+  doc.save(fname);
+  hideOverlay();
+  showToast(`저장 완료 — ${fname}`);
+}
+
+function drawContain(ctx, src, x, y, w, h) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+      const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+      const dx = x + (w - dw) / 2, dy = y + (h - dh) / 2;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+      ctx.fillStyle = '#1A1916'; ctx.fillRect(x, y, w, h);
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore(); res();
+    };
+    img.onerror = rej; img.src = src;
+  });
+}
+
+function showOverlay(msg) { document.getElementById('progMsg').textContent = msg; document.getElementById('overlay').classList.add('on'); }
+function hideOverlay() { document.getElementById('overlay').classList.remove('on'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 3500); }
+
+addProduct();
+</script>
+</body>
+</html>
