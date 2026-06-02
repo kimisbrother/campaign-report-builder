@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캠페인 게재보고 빌더</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:ital,wght@0,400;0,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --bg:#F4F3EF; --surf:#fff; --surf2:#ECEAE4;
+  --border:#D6D2C8; --text:#1C1B18; --muted:#7A776E;
+  --meta:#E8501A; --tiktok:#111;
+  --r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--surf);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--meta);}
+.site-name{font-size:12px;font-weight:500;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;}
+.btn-pdf{background:var(--text);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:opacity .15s;}
+.btn-pdf:hover{opacity:.78;}
+.btn-pdf svg{width:14px;height:14px;}
+
+/* WRAP */
+.wrap{max-width:860px;margin:0 auto;padding:36px 22px 100px;}
+
+/* COVER CARD */
+.cover{background:var(--text);border-radius:18px;padding:44px 48px;margin-bottom:26px;color:#fff;position:relative;overflow:hidden;}
+.cover::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;border:50px solid rgba(255,255,255,.04);}
+.cover-eyebrow{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:24px;}
+.cover-row{margin-bottom:18px;}
+.cover-fl{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;}
+.cover-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.ci{background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.18);color:#fff;font-family:inherit;outline:none;transition:border-color .15s;}
+.ci:focus{border-bottom-color:rgba(255,255,255,.55);}
+.ci::placeholder{color:rgba(255,255,255,.2);}
+.ci-lg{font-size:30px;font-weight:300;padding:2px 0 7px;max-width:120px;}
+.ci-md{font-size:17px;font-weight:300;padding:2px 0 5px;max-width:280px;}
+.cover-ghost{font-size:30px;font-weight:300;color:rgba(255,255,255,.22);}
+
+/* SEC HEADER */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-label{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.btn-add{background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:7px 13px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text);display:flex;align-items:center;gap:5px;transition:background .1s;}
+.btn-add:hover{background:var(--surf2);}
+
+/* PRODUCT CARD */
+.prod{background:var(--surf);border:1px solid var(--border);border-radius:14px;margin-bottom:18px;overflow:hidden;}
+.prod-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+.prod-num{width:26px;height:26px;border-radius:50%;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--muted);flex-shrink:0;}
+.prod-name{flex:1;border:none;outline:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--text);background:transparent;}
+.prod-name::placeholder{color:var(--muted);font-weight:400;}
+.btn-del{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;border-radius:4px;display:flex;align-items:center;transition:color .1s,background .1s;}
+.btn-del:hover{color:#c0392b;background:#fff0ee;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);}
+.tab{flex:1;padding:12px 16px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;color:var(--muted);border-bottom:2.5px solid transparent;transition:all .15s;user-select:none;}
+.tab:hover{background:var(--surf2);}
+.tab.active.meta{color:var(--meta);border-bottom-color:var(--meta);}
+.tab.active.tiktok{color:var(--tiktok);border-bottom-color:var(--tiktok);}
+.badge{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500;}
+.meta-b{background:#FDEEE8;color:var(--meta);}
+.tiktok-b{background:#f0f0f0;color:#333;}
+
+/* PANEL */
+.panel{padding:20px;display:none;}
+.panel.active{display:block;}
+.panel-hint{font-size:11px;color:var(--muted);margin-bottom:14px;}
+
+/* IMAGE GRID — 3 cols, images tall */
+.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;}
+
+.slot-wrap{display:flex;flex-direction:column;gap:6px;}
+
+/* slot: tall card — will contain image in full */
+.slot{
+  border:1.5px dashed var(--border);
+  border-radius:10px;
+  /* natural height — no fixed aspect, grows with image */
+  min-height:180px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:border-color .15s,background .15s;
+  background:var(--surf2);
+}
+.slot:hover{border-color:#999;background:#E5E2DC;}
+.slot.filled{border-style:solid;border-color:var(--border);background:#fafafa;cursor:default;}
+/* image: full width, natural height — NO cropping */
+.slot img{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:8px;
+}
+.slot-ov{position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;gap:6px;opacity:0;transition:opacity .15s;border-radius:8px;}
+.slot.filled:hover .slot-ov{opacity:1;}
+.ov-btn{background:#fff;border:none;border-radius:6px;padding:5px 11px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;}
+.ov-btn.red{background:#ff3b30;color:#fff;}
+.slot-ph{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 0;}
+.slot-ph svg{color:var(--muted);}
+.slot-ph span{font-size:11px;color:var(--muted);text-align:center;line-height:1.5;}
+.slot input[type=file]{display:none;}
+
+/* caption */
+.cap{width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text);background:var(--surf);outline:none;transition:border-color .15s;}
+.cap:focus{border-color:#999;}
+.cap::placeholder{color:var(--muted);}
+
+/* add slot btn */
+.btn-slot{width:100%;border:1.5px dashed var(--border);background:none;border-radius:10px;padding:11px;font-size:12px;font-family:inherit;color:var(--muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px;font-weight:500;}
+.btn-slot:hover{background:var(--surf2);border-color:#999;color:var(--text);}
+
+/* PROGRESS OVERLAY */
+.overlay{position:fixed;inset:0;background:rgba(28,27,24,.6);display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.on{opacity:1;pointer-events:all;}
+.prog-box{background:#fff;border-radius:14px;padding:30px 40px;text-align:center;min-width:220px;}
+.prog-box p{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.prog-box small{font-size:12px;color:var(--muted);}
+
+/* TOAST */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--text);color:#fff;padding:9px 18px;border-radius:99px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:all .25s;z-index:400;white-space:nowrap;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.footer{text-align:center;font-size:12px;color:var(--muted);margin-top:40px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left"><div class="dot"></div><span class="site-name">캠페인 게재보고 빌더</span></div>
+  <button class="btn-pdf" onclick="exportPDF()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+    PDF 내보내기
+  </button>
+</div>
+
+<div class="wrap">
+
+  <div class="cover">
+    <div class="cover-eyebrow">대분류 — 보고서 정보</div>
+    <div class="cover-row">
+      <div class="cover-fl">월 / 브랜드</div>
+      <div class="cover-line">
+        <input class="ci ci-lg" id="coverMonth" placeholder="5" maxlength="3" oninput="syncMonth()">
+        <span class="cover-ghost">월 캠페인 게재보고</span>
+      </div>
+      <div class="cover-line" style="margin-top:10px">
+        <input class="ci ci-md" id="coverBrand" placeholder="구달">
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-hd">
+    <span class="sec-label">중분류 — 상품</span>
+    <button class="btn-add" onclick="addProduct()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+      상품 추가
+    </button>
+  </div>
+
+  <div id="prodList"></div>
+  <p class="footer">상품 추가 → Meta / TikTok 탭에서 이미지 업로드 → PDF 내보내기</p>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="prog-box">
+    <p id="progMsg">PDF 생성 중...</p>
+    <small>잠시만 기다려 주세요</small>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let products=[], PC=0, SC=0;
+
+function syncMonth(){
+  const v=document.getElementById('coverMonth').value||'?';
+  document.querySelectorAll('.msync').forEach(e=>e.textContent=v+'월');
+}
+
+/* ── PRODUCT ── */
+function addProduct(){
+  const id=++PC;
+  products.push({id,name:''});
+  const month=document.getElementById('coverMonth').value||'?';
+  const div=document.createElement('div');
+  div.className='prod'; div.id=`P${id}`;
+  div.innerHTML=`
+    <div class="prod-hd">
+      <div class="prod-num" id="PN${id}">${products.length}</div>
+      <input class="prod-name" placeholder="${month}월 상품명 입력..." oninput="products.find(p=>p.id===${id}).name=this.value">
+      <button class="btn-del" onclick="delProduct(${id})">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="tabs">
+      <div class="tab meta active" id="TM${id}" onclick="switchTab(${id},'meta')">
+        <span>Meta</span><span class="badge meta-b">메타</span>
+      </div>
+      <div class="tab tiktok" id="TT${id}" onclick="switchTab(${id},'tiktok')">
+        <span>TikTok</span><span class="badge tiktok-b">틱톡</span>
+      </div>
+    </div>
+    <div class="panel active" id="PM${id}">
+      <p class="panel-hint">소분류 · <span class="msync">${month}월</span> Meta — 최대 6개</p>
+      <div class="img-grid" id="GM${id}"></div>
+      <button class="btn-slot" id="ABM${id}" onclick="addSlot(${id},'M')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        이미지 추가
+      </button>
+    </div>
+    <div class="panel" id="PT${id}">
+      <p class="panel-hint">소분류 · <span class="msync">${month}월</span> TikTok — 최대 6개</p>
+      <div class="img-grid" id="GT${id}"></div>
+      <button class="btn-slot" id="ABT${id}" onclick="addSlot(${id},'T')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        이미지 추가
+      </button>
+    </div>
+  `;
+  document.getElementById('prodList').appendChild(div);
+  addSlot(id,'M'); addSlot(id,'T');
+}
+
+function delProduct(id){
+  products=products.filter(p=>p.id!==id);
+  document.getElementById(`P${id}`)?.remove();
+  products.forEach((p,i)=>{const e=document.getElementById(`PN${p.id}`);if(e)e.textContent=i+1;});
+}
+
+function switchTab(pid,ch){
+  ['meta','tiktok'].forEach(c=>{
+    document.getElementById(`TM${pid}`)?.classList.toggle('active',c==='meta');
+    document.getElementById(`TT${pid}`)?.classList.toggle('active',c==='tiktok');
+    document.getElementById(`PM${pid}`)?.classList.toggle('active',c==='meta');
+    document.getElementById(`PT${pid}`)?.classList.toggle('active',c==='tiktok');
+  });
+  if(ch==='meta'){
+    document.getElementById(`TM${pid}`).classList.add('active');
+    document.getElementById(`PM${pid}`).classList.add('active');
+    document.getElementById(`TT${pid}`).classList.remove('active');
+    document.getElementById(`PT${pid}`).classList.remove('active');
+  } else {
+    document.getElementById(`TT${pid}`).classList.add('active');
+    document.getElementById(`PT${pid}`).classList.add('active');
+    document.getElementById(`TM${pid}`).classList.remove('active');
+    document.getElementById(`PM${pid}`).classList.remove('active');
+  }
+}
+
+/* ── SLOT ── */
+function addSlot(pid, ch){
+  const grid=document.getElementById(`G${ch}${pid}`);
+  if(!grid) return;
+  if(grid.querySelectorAll('.slot-wrap').length>=6){showToast('최대 6개');return;}
+  const sid=`S${++SC}`;
+  const wrap=document.createElement('div'); wrap.className='slot-wrap'; wrap.id=`W${sid}`;
+  const slot=document.createElement('div'); slot.className='slot'; slot.id=sid;
+  slot.innerHTML=`
+    <div class="slot-ph">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <span>클릭하여<br>업로드</span>
+    </div>
+    <input type="file" accept="image/*" onchange="loadImg(this,'${sid}')">
+    <div class="slot-ov">
+      <button class="ov-btn" onclick="event.stopPropagation();document.getElementById('${sid}').querySelector('input').click()">변경</button>
+      <button class="ov-btn red" onclick="event.stopPropagation();delSlot('${sid}','${pid}','${ch}')">삭제</button>
+    </div>
+  `;
+  slot.addEventListener('click',function(){if(!this.classList.contains('filled'))this.querySelector('input').click();});
+  const cap=document.createElement('input'); cap.className='cap'; cap.id=`C${sid}`; cap.placeholder='이미지 이름 / 계정명 (@username)';
+  wrap.appendChild(slot); wrap.appendChild(cap);
+  grid.appendChild(wrap);
+  checkBtn(pid,ch);
+}
+
+function delSlot(sid,pid,ch){
+  document.getElementById(`W${sid}`)?.remove();
+  checkBtn(pid,ch);
+}
+
+function checkBtn(pid,ch){
+  const grid=document.getElementById(`G${ch}${pid}`);
+  const btn=document.getElementById(`AB${ch}${pid}`);
+  if(!grid||!btn) return;
+  btn.style.display=grid.querySelectorAll('.slot-wrap').length>=6?'none':'flex';
+}
+
+function loadImg(input,sid){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const slot=document.getElementById(sid);
+    slot.classList.add('filled');
+    slot.querySelector('.slot-ph').remove();
+    let img=slot.querySelector('img');
+    if(!img){img=document.createElement('img');slot.insertBefore(img,slot.querySelector('.slot-ov'));}
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ══════════════════════════════════════════
+   PDF EXPORT — Canvas rendering (한글 완벽 지원)
+   레이아웃: A4 세로 (Portrait)
+   - 커버 페이지
+   - 상품별 구분 페이지
+   - 채널 페이지: 이미지를 2열로, 이미지 비율 유지 (contain), 캡션 큼직하게
+══════════════════════════════════════════ */
+async function exportPDF(){
+  const {jsPDF}=window.jspdf;
+  const month=document.getElementById('coverMonth').value||'?';
+  const brand=document.getElementById('coverBrand').value||'브랜드';
+
+  // A4 Portrait: 210×297mm  → canvas 1240×1754px (150dpi)
+  const CW=1240, CH=1754;
+  const MW=210, MH=297;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+
+  showOverlay('폰트 로딩 중...');
+  await Promise.all([
+    document.fonts.load('300 20px "Noto Sans KR"'),
+    document.fonts.load('400 20px "Noto Sans KR"'),
+    document.fonts.load('500 20px "Noto Sans KR"'),
+    document.fonts.load('700 20px "Noto Sans KR"'),
+    document.fonts.load('400 16px "DM Mono"'),
+  ]);
+
+  let first=true;
+  const addPage=cvs=>{
+    const d=cvs.toDataURL('image/jpeg',.93);
+    if(!first) doc.addPage(); first=false;
+    doc.addImage(d,'JPEG',0,0,MW,MH);
+  };
+
+  const mk=()=>{const c=document.createElement('canvas');c.width=CW;c.height=CH;return c;};
+
+  /* helpers */
+  const fs=(ctx,size)=>{ ctx.font=`${size}px "Noto Sans KR",sans-serif`; };
+  const fsb=(ctx,size)=>{ ctx.font=`700 ${size}px "Noto Sans KR",sans-serif`; };
+  const fsm=(ctx,size)=>{ ctx.font=`500 ${size}px "Noto Sans KR",sans-serif`; };
+  const fsl=(ctx,size)=>{ ctx.font=`300 ${size}px "Noto Sans KR",sans-serif`; };
+  const fsmono=(ctx,size)=>{ ctx.font=`400 ${size}px "DM Mono","Noto Sans KR",monospace`; };
+  const M=60; // margin px
+
+  /* ── COVER ── */
+  showOverlay('커버 생성 중...');
+  {
+    const cvs=mk(); const ctx=cvs.getContext('2d');
+    ctx.fillStyle='#1C1B18'; ctx.fillRect(0,0,CW,CH);
+    // circle deco
+    ctx.save(); ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=80;
+    ctx.beginPath(); ctx.arc(CW+100,CH*.18,420,0,Math.PI*2); ctx.stroke(); ctx.restore();
+    // eyebrow
+    fs(ctx,28); ctx.fillStyle='rgba(255,255,255,.35)';
+    ctx.fillText('CAMPAIGN REPORT',M, 120);
+    // title
+    fsl(ctx,88); ctx.fillStyle='rgba(255,255,255,.22)';
+    ctx.fillText(`월 캠페인 게재보고`, M+140, CH*.42);
+    fsl(ctx,88); ctx.fillStyle='#fff';
+    ctx.fillText(month, M, CH*.42);
+    // brand
+    fs(ctx,42); ctx.fillStyle='rgba(255,255,255,.55)';
+    ctx.fillText(brand, M, CH*.42+90);
+    // bottom line
+    ctx.fillStyle='rgba(255,255,255,.1)';
+    ctx.fillRect(M, CH-100, CW-M*2, 1);
+    fsmono(ctx,24); ctx.fillStyle='rgba(255,255,255,.3)';
+    ctx.fillText(`${month}월 캠페인 게재보고 · ${brand}`, M, CH-64);
+    addPage(cvs);
+  }
+
+  /* ── PRODUCTS ── */
+  for(let pi=0;pi<products.length;pi++){
+    const prod=products[pi];
+    const pName=prod.name||'상품명';
+    showOverlay(`[${pi+1}/${products.length}] ${pName}`);
+
+    /* DIVIDER */
+    {
+      const cvs=mk(); const ctx=cvs.getContext('2d');
+      ctx.fillStyle='#F4F3EF'; ctx.fillRect(0,0,CW,CH);
+      // accent bar left
+      ctx.fillStyle='#1C1B18'; ctx.fillRect(0,0,14,CH);
+      // number
+      fsb(ctx,200); ctx.fillStyle='rgba(28,27,24,.06)';
+      ctx.fillText(String(pi+1).padStart(2,'0'), CW-360, CH*.55);
+      // label
+      fs(ctx,28); ctx.fillStyle='#7A776E'; ctx.fillText('PRODUCT', M+26, CH*.38);
+      fsb(ctx,90); ctx.fillStyle='#1C1B18'; ctx.fillText(pName, M+26, CH*.38+110);
+      fs(ctx,36); ctx.fillStyle='#7A776E'; ctx.fillText(`${month}월`, M+26, CH*.38+166);
+      addPage(cvs);
+    }
+
+    /* CHANNEL PAGES */
+    for(const {ch,chId,label,color} of [
+      {ch:'meta',chId:'M',label:'Meta 메타',color:'#E8501A'},
+      {ch:'tiktok',chId:'T',label:'TikTok 틱톡',color:'#111111'}
+    ]){
+      const grid=document.getElementById(`G${chId}${prod.id}`);
+      if(!grid) continue;
+      const wraps=Array.from(grid.querySelectorAll('.slot-wrap')).filter(w=>w.querySelector('.slot.filled'));
+      if(!wraps.length) continue;
+
+      /* group into pages of 6 (2 cols × 3 rows) */
+      const COLS=2, PER_PAGE=6;
+      for(let ps=0;ps<wraps.length;ps+=PER_PAGE){
+        const group=wraps.slice(ps,ps+PER_PAGE);
+        const cvs=mk(); const ctx=cvs.getContext('2d');
+        ctx.fillStyle='#F4F3EF'; ctx.fillRect(0,0,CW,CH);
+
+        /* HEADER */
+        const HH=90;
+        ctx.fillStyle=color; ctx.fillRect(0,0,CW,HH);
+        fsb(ctx,36); ctx.fillStyle='#fff';
+        ctx.fillText(`${pName}`, M, 38);
+        fs(ctx,28); ctx.fillStyle='rgba(255,255,255,.75)';
+        ctx.fillText(`— ${label}`, M, 72);
+        // right
+        fsmono(ctx,22); ctx.fillStyle='rgba(255,255,255,.6)';
+        const rightLabel=`${month}월 캠페인`;
+        const rw=ctx.measureText(rightLabel).width;
+        ctx.fillText(rightLabel, CW-M-rw, 56);
+
+        /* IMAGE AREA */
+        const GAP=24;
+        const CAPTION_H=52;  // space below each image for caption
+        const PAD_TOP=HH+28;
+        const PAD_BOT=32;
+        const availW=CW-M*2;
+        const availH=CH-PAD_TOP-PAD_BOT;
+        const ROWS=Math.ceil(group.length/COLS);
+        const cellW=(availW-(COLS-1)*GAP)/COLS;
+        // cell height: divide available height evenly
+        const cellH=(availH-(ROWS-1)*GAP)/ROWS;
+        const imgMaxH=cellH-CAPTION_H;
+
+        for(let i=0;i<group.length;i++){
+          const wrap=group[i];
+          const imgEl=wrap.querySelector('img');
+          const capEl=wrap.querySelector('.cap');
+          const caption=capEl?capEl.value:'';
+          const col=i%COLS, row=Math.floor(i/COLS);
+          const cx=M+col*(cellW+GAP);
+          const cy=PAD_TOP+row*(cellH+GAP);
+
+          /* image bg */
+          ctx.fillStyle='#E2DFD9';
+          rrect(ctx,cx,cy,cellW,imgMaxH,10);
+
+          if(imgEl&&imgEl.src&&imgEl.src.startsWith('data:')){
+            await drawContain(ctx,imgEl.src,cx,cy,cellW,imgMaxH,10);
+          }
+
+          /* caption area */
+          const capY=cy+imgMaxH;
+          // caption bg strip (subtle)
+          ctx.fillStyle='rgba(28,27,24,.03)';
+          ctx.fillRect(cx, capY, cellW, CAPTION_H);
+
+          if(caption){
+            fsmono(ctx,24); ctx.fillStyle='#4A4843';
+            ctx.fillText(caption, cx+10, capY+34, cellW-16);
+          } else {
+            fsmono(ctx,22); ctx.fillStyle='rgba(28,27,24,.2)';
+            ctx.fillText('—', cx+10, capY+34);
+          }
+        }
+
+        addPage(cvs);
+      }
+    }
+  }
+
+  const fname=`${month}월_캠페인_게재보고_${brand}.pdf`;
+  doc.save(fname);
+  hideOverlay();
+  showToast(`✓  ${fname}  저장 완료`);
+}
+
+/* draw image object-fit:CONTAIN into rect, with rounded clip */
+function drawContain(ctx,src,x,y,w,h,r){
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const iw=img.naturalWidth, ih=img.naturalHeight;
+      const scale=Math.min(w/iw, h/ih);
+      const dw=iw*scale, dh=ih*scale;
+      const dx=x+(w-dw)/2, dy=y+(h-dh)/2;
+      ctx.save();
+      ctx.beginPath(); rrectPath(ctx,x,y,w,h,r); ctx.clip();
+      // fill bg first (letterbox color)
+      ctx.fillStyle='#1C1B18';
+      ctx.fillRect(x,y,w,h);
+      ctx.drawImage(img,dx,dy,dw,dh);
+      ctx.restore();
+      res();
+    };
+    img.onerror=rej; img.src=src;
+  });
+}
+
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();rrectPath(ctx,x,y,w,h,r);ctx.fill();}
+function rrectPath(ctx,x,y,w,h,r){
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function showOverlay(msg){
+  document.getElementById('progMsg').textContent=msg;
+  document.getElementById('overlay').classList.add('on');
+}
+function hideOverlay(){ document.getElementById('overlay').classList.remove('on'); }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),3500);
+}
+
+addProduct();
+</script>
+</body>
+</html>
